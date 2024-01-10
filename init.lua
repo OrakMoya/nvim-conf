@@ -101,12 +101,12 @@ require('lazy').setup({
   -- Surround
   {
     'kylechui/nvim-surround',
-    version="*",
-    event="VeryLazy",
+    version = "*",
+    event = "VeryLazy",
     config = function()
-        require("nvim-surround").setup({
-            -- Configuration here, or leave empty to use defaults
-        })
+      require("nvim-surround").setup({
+        -- Configuration here, or leave empty to use defaults
+      })
     end
   },
 
@@ -223,12 +223,11 @@ require('lazy').setup({
   },
 
   {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
-    priority = 1000,
+    'sainnhe/gruvbox-material',
+    priority = 2000,
     config = function()
-      vim.cmd.colorscheme 'onedark'
-    end,
+      vim.cmd.colorscheme 'gruvbox-material'
+    end
   },
 
   {
@@ -238,7 +237,7 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'gruvbox-material',
         component_separators = '|',
         section_separators = '',
       },
@@ -370,7 +369,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   pattern = '*',
 })
 
-require('hologram').setup{
+require('hologram').setup {
   auto_display = true,
 }
 
@@ -447,7 +446,8 @@ end
 vim.keymap.set('n', '<leader>s/', telescope_live_grep_open_files, { desc = '[S]earch [/] in Open Files' })
 vim.keymap.set('n', '<leader>ss', require('telescope.builtin').builtin, { desc = '[S]earch [S]elect Telescope' })
 vim.keymap.set('n', '<leader>sb', require('telescope.builtin').current_buffer_fuzzy_find, { desc = '[S]earch [B]uffer' })
-vim.keymap.set('n', '<leader>so', require('telescope.builtin').lsp_document_symbols, { desc = '[S]earch Document [O]utline' })
+vim.keymap.set('n', '<leader>so', require('telescope.builtin').lsp_document_symbols,
+  { desc = '[S]earch Document [O]utline' })
 vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
