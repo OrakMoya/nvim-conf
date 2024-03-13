@@ -48,6 +48,7 @@ vim.g.vimtex_syntax_nospell_comments = 1
 vim.opt.termguicolors = true
 
 
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
@@ -78,13 +79,19 @@ vim.opt.rtp:prepend(lazypath)
 --    as they will be available in your neovim runtime.
 require('lazy').setup({
   -- NOTE: First, some plugins that don't require any configuration
-  
+
   {
-      'stevearc/oil.nvim',
-        opts = {},
-          -- Optional dependencies
-        dependencies = { "nvim-tree/nvim-web-devicons" },
-   },
+    'stevearc/oil.nvim',
+    opts = {},
+    -- Optional dependencies
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
+
+  {
+    "ThePrimeagen/harpoon",
+    branch = "harpoon2",
+    dependencies = { "nvim-lua/plenary.nvim" }
+  },
 
   -- NpmScripts detection
   'neoclide/npm.nvim',
@@ -125,6 +132,24 @@ require('lazy').setup({
         -- Configuration here, or leave empty to use defaults
       })
     end
+  },
+  -- snippets
+  {
+    "L3MON4D3/LuaSnip",
+    -- follow latest release.
+    version = "v2.*", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
+    -- install jsregexp (optional!).
+    build = "make install_jsregexp",
+    dependencies = { "rafamadriz/friendly-snippets" },
+  },
+
+
+  -- Live server
+  {
+    'barrett-ruth/live-server.nvim',
+    build = 'npm add -g live-server',
+    cmd = { 'LiveServerStart', 'LiveServerStop' },
+    config = true
   },
 
   {
@@ -299,6 +324,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     dependencies = {
       'nvim-treesitter/nvim-treesitter-textobjects',
+      'EmranMR/tree-sitter-blade',
     },
     build = ':TSUpdate',
   },
@@ -387,37 +413,72 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 })
 
 require("dap").adapters.lldb = {
-	type = "executable",
-	command = "/usr/bin/lldb-vscode", -- adjust as needed
-	name = "lldb",
+  type = "executable",
+  command = "/usr/bin/lldb-vscode", -- adjust as needed
+  name = "lldb",
 }
 
 local lldb = {
-	name = "Launch lldb",
-	type = "lldb", -- matches the adapter
-	request = "launch", -- could also attach to a currently running process
-	program = function()
-		return vim.fn.input(
-			"Path to executable: ",
-			vim.fn.getcwd() .. "/",
-			"file"
-		)
-	end,
-	cwd = "${workspaceFolder}",
-	stopOnEntry = false,
-	args = {},
-	runInTerminal = false,
+  name = "Launch lldb",
+  type = "lldb",      -- matches the adapter
+  request = "launch", -- could also attach to a currently running process
+  program = function()
+    return vim.fn.input(
+      "Path to executable: ",
+      vim.fn.getcwd() .. "/",
+      "file"
+    )
+  end,
+  cwd = "${workspaceFolder}",
+  stopOnEntry = false,
+  args = {},
+  runInTerminal = false,
 }
 
 
 require('dap').configurations.rust = {
-	lldb -- different debuggers or more configurations can be used here
+  lldb -- different debuggers or more configurations can be used here
 }
 
 require('dap').configurations.python = {
-	lldb
+  lldb
 }
 
+
+local harpoon = require('harpoon');
+harpoon.setup({})
+
+vim.keymap.set("n", "<leader>a", function() harpoon:list():append() end)
+vim.keymap.set("n", "<C-S-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
+
+vim.keymap.set("n", "<C-h>", function() harpoon:list():select(1) end)
+vim.keymap.set("n", "<C-t>", function() harpoon:list():select(2) end)
+vim.keymap.set("n", "<C-n>", function() harpoon:list():select(3) end)
+vim.keymap.set("n", "<C-s>", function() harpoon:list():select(4) end)
+
+-- Toggle previous & next buffers stored within Harpoon list
+vim.keymap.set("n", "<C-S-P>", function() harpoon:list():prev() end)
+vim.keymap.set("n", "<C-S-N>", function() harpoon:list():next() end)
+
+local conf = require("telescope.config").values
+local function toggle_telescope(harpoon_files)
+    local file_paths = {}
+    for _, item in ipairs(harpoon_files.items) do
+        table.insert(file_paths, item.value)
+    end
+
+    require("telescope.pickers").new({}, {
+        prompt_title = "Harpoon",
+        finder = require("telescope.finders").new_table({
+            results = file_paths,
+        }),
+        previewer = conf.file_previewer({}),
+        sorter = conf.generic_sorter({}),
+    }):find()
+end
+
+vim.keymap.set("n", "<C-S-e>", function() toggle_telescope(harpoon:list()) end,
+    { desc = "Open harpoon window" })
 
 require('dapui').setup()
 
@@ -467,7 +528,9 @@ require("oil").setup({
   cleanup_delay_ms = 2000,
   -- Set to true to autosave buffers that are updated with LSP willRenameFiles
   -- Set to "unmodified" to only save unmodified buffers
-  lsp_rename_autosave = false,
+  lsp_file_methods = {
+    autosave_chages = false,
+  },
   -- Constrain the cursor to the editable parts of the oil buffer
   -- Set to `false` to disable, or "name" to keep it on the file names
   constrain_cursor = "editable",
@@ -819,6 +882,7 @@ local servers = {
       -- diagnostics = { disable = { 'missing-fields' } },
     },
   },
+  stimulus_ls = {filetypes = {'blade.php'}},
 }
 
 -- Setup neovim lua configuration
@@ -853,6 +917,7 @@ require("autoclose").setup()
 -- See `:help cmp`
 local cmp = require 'cmp'
 local luasnip = require 'luasnip'
+luasnip.filetype_extend("php", { "html", "css" })
 require('luasnip.loaders.from_vscode').lazy_load()
 luasnip.config.setup {}
 
