@@ -47,6 +47,12 @@ vim.g.vimtex_view_general_options = '--unique file:@pdf#src:@line@tex'
 vim.g.vimtex_syntax_nospell_comments = 1
 vim.opt.termguicolors = true
 
+vim.o.foldmethod = 'indent'
+vim.o.foldminlines = 30
+vim.o.foldopen = 'block,hor,insert,jump,mark,percent,quickfix,search,tag,undo'
+vim.o.foldclose = 'all'
+vim.o.foldlevel = 5
+
 
 
 -- Set <space> as the leader key
@@ -87,6 +93,10 @@ require('lazy').setup({
     dependencies = { "nvim-tree/nvim-web-devicons" },
   },
 
+  "luckasRanarison/tailwind-tools.nvim",
+  dependencies = { "nvim-treesitter/nvim-treesitter" },
+  opts = {}, -- your configuration
+
   {
     "ThePrimeagen/harpoon",
     branch = "harpoon2",
@@ -103,8 +113,6 @@ require('lazy').setup({
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
 
-  -- Images
-  'edluffy/hologram.nvim',
 
   -- Tex
   'lervag/vimtex',
@@ -112,11 +120,25 @@ require('lazy').setup({
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
 
-  -- Debug Adapter
-  'mfussenegger/nvim-dap',
+  {
+    "adalessa/laravel.nvim",
+    dependencies = {
+      "nvim-telescope/telescope.nvim",
+      "tpope/vim-dotenv",
+      "MunifTanjim/nui.nvim",
+      "nvimtools/none-ls.nvim",
+    },
+    cmd = { "Sail", "Artisan", "Composer", "Npm", "Yarn", "Laravel" },
+    keys = {
+      { "<leader>la", ":Laravel artisan<cr>" },
+      { "<leader>lr", ":Laravel routes<cr>" },
+      { "<leader>lm", ":Laravel related<cr>" },
+    },
+    event = { "VeryLazy" },
+    config = true,
+  },
 
-  -- Dap UI
-  'rcarriga/nvim-dap-ui',
+
 
 
   -- NOTE: This is where your plugins related to LSP can be installed.
@@ -412,11 +434,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   pattern = '*',
 })
 
-require("dap").adapters.lldb = {
-  type = "executable",
-  command = "/usr/bin/lldb-vscode", -- adjust as needed
-  name = "lldb",
-}
 
 local lldb = {
   name = "Launch lldb",
@@ -436,20 +453,12 @@ local lldb = {
 }
 
 
-require('dap').configurations.rust = {
-  lldb -- different debuggers or more configurations can be used here
-}
-
-require('dap').configurations.python = {
-  lldb
-}
-
 
 local harpoon = require('harpoon');
 harpoon.setup({})
 
-vim.keymap.set("n", "<leader>a", function() harpoon:list():append() end)
-vim.keymap.set("n", "<C-S-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
+vim.keymap.set("n", "<leader>ha", function() harpoon:list():add() end)
+vim.keymap.set("n", "<leader>hl", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
 
 vim.keymap.set("n", "<C-h>", function() harpoon:list():select(1) end)
 vim.keymap.set("n", "<C-t>", function() harpoon:list():select(2) end)
@@ -462,29 +471,25 @@ vim.keymap.set("n", "<C-S-N>", function() harpoon:list():next() end)
 
 local conf = require("telescope.config").values
 local function toggle_telescope(harpoon_files)
-    local file_paths = {}
-    for _, item in ipairs(harpoon_files.items) do
-        table.insert(file_paths, item.value)
-    end
+  local file_paths = {}
+  for _, item in ipairs(harpoon_files.items) do
+    table.insert(file_paths, item.value)
+  end
 
-    require("telescope.pickers").new({}, {
-        prompt_title = "Harpoon",
-        finder = require("telescope.finders").new_table({
-            results = file_paths,
-        }),
-        previewer = conf.file_previewer({}),
-        sorter = conf.generic_sorter({}),
-    }):find()
+  require("telescope.pickers").new({}, {
+    prompt_title = "Harpoon",
+    finder = require("telescope.finders").new_table({
+      results = file_paths,
+    }),
+    previewer = conf.file_previewer({}),
+    sorter = conf.generic_sorter({}),
+  }):find()
 end
 
-vim.keymap.set("n", "<C-S-e>", function() toggle_telescope(harpoon:list()) end,
-    { desc = "Open harpoon window" })
+vim.keymap.set("n", "<leader>gh", function() toggle_telescope(harpoon:list()) end,
+  { desc = "Open harpoon window" })
 
-require('dapui').setup()
 
-require('hologram').setup {
-  auto_display = true,
-}
 
 -- Configure oil
 require("oil").setup({
@@ -882,7 +887,7 @@ local servers = {
       -- diagnostics = { disable = { 'missing-fields' } },
     },
   },
-  stimulus_ls = {filetypes = {'blade.php'}},
+  stimulus_ls = { filetypes = { 'blade.php' } },
 }
 
 -- Setup neovim lua configuration
