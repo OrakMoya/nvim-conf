@@ -50,8 +50,12 @@ vim.opt.termguicolors = true
 vim.o.foldmethod = 'indent'
 vim.o.foldminlines = 30
 vim.o.foldopen = 'block,hor,insert,jump,mark,percent,quickfix,search,tag,undo'
-vim.o.foldclose = 'all'
 vim.o.foldlevel = 5
+vim.filetype.add({
+  pattern = {
+    ['.*%.blade%.php'] = 'blade',
+  },
+})
 
 
 
@@ -85,6 +89,13 @@ vim.opt.rtp:prepend(lazypath)
 --    as they will be available in your neovim runtime.
 require('lazy').setup({
   -- NOTE: First, some plugins that don't require any configuration
+
+  'mfussenegger/nvim-dap',
+  'nvim-neotest/nvim-nio',
+  'rcarriga/nvim-dap-ui',
+  'nvim-telescope/telescope-dap.nvim',
+
+  'mbbill/undotree',
 
   {
     'stevearc/oil.nvim',
@@ -165,14 +176,6 @@ require('lazy').setup({
     dependencies = { "rafamadriz/friendly-snippets" },
   },
 
-
-  -- Live server
-  {
-    'barrett-ruth/live-server.nvim',
-    build = 'npm add -g live-server',
-    cmd = { 'LiveServerStart', 'LiveServerStop' },
-    config = true
-  },
 
   {
     -- LSP Configuration & Plugins
@@ -423,6 +426,46 @@ vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnos
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
 
+
+
+local dap = require('dap')
+require('telescope').load_extension('dap')
+
+dap.adapters.php = {
+  type = "executable",
+  command = "node",
+  args = { os.getenv("HOME") .. "/Downloads/vscode-php-debug/out/phpDebug.js" }
+}
+
+dap.configurations.php = {
+  {
+    type = "php",
+    request = "launch",
+    name = "Listen for Xdebug",
+    port = 9003
+  }
+}
+
+
+
+local dapui = require("dapui")
+dapui.setup();
+dap.listeners.before.attach.dapui_config = function()
+  dapui.open()
+end
+dap.listeners.before.launch.dapui_config = function()
+  dapui.open()
+end
+dap.listeners.before.event_terminated.dapui_config = function()
+  dapui.close()
+end
+dap.listeners.before.event_exited.dapui_config = function()
+  dapui.close()
+end
+
+
+
+
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
@@ -451,6 +494,8 @@ local lldb = {
   args = {},
   runInTerminal = false,
 }
+
+
 
 
 
@@ -725,6 +770,29 @@ vim.keymap.set('n', '<leader>sG', ':LiveGrepGitRoot<cr>', { desc = '[S]earch by 
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
 
+
+
+-- Debugging
+vim.keymap.set('n', '<F5>', function() require('dap').continue() end, { desc = 'Start debugging' })
+vim.keymap.set('n', '<F10>', function() require('dap').step_over() end, { desc = 'Step over' })
+vim.keymap.set('n', '<F11>', function() require('dap').step_into() end, { desc = 'Step into' })
+vim.keymap.set('n', '<F12>', function() require('dap').step_out() end, { desc = 'Step out' })
+vim.keymap.set('n', '<Leader>b', function() require('dap').toggle_breakpoint() end, { desc = 'Toggle breakpoint' })
+vim.keymap.set({ 'n', 'v' }, '<Leader>dh', function()
+  require('dap.ui.widgets').hover()
+end, { desc = 'Debug hover widget' })
+vim.keymap.set({ 'n', 'v' }, '<Leader>dp', function()
+  require('dap.ui.widgets').preview()
+end, { desc = 'Debug hover preview' })
+vim.keymap.set('n', '<Leader>df', function()
+  local widgets = require('dap.ui.widgets')
+  widgets.centered_float(widgets.frames)
+end, { desc = 'Debug floating widget' })
+vim.keymap.set('n', '<Leader>ds', function()
+  local widgets = require('dap.ui.widgets')
+  widgets.centered_float(widgets.scopes)
+end, { desc = 'Debug centered floating widget' })
+
 -- [[ Configure Treesitter ]]
 -- See `:help nvim-treesitter`
 -- Defer Treesitter setup after first render to improve startup time of 'nvim {filename}'
@@ -841,22 +909,16 @@ local on_attach = function(_, bufnr)
 end
 
 -- document existing key chains
-require('which-key').register {
-  ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-  ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
-  ['<leader>g'] = { name = '[G]it', _ = 'which_key_ignore' },
-  ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
-  ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-  ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-  ['<leader>t'] = { name = '[T]oggle', _ = 'which_key_ignore' },
-  ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
+require('which-key').add {
+  { '<leader>c', group = '[C]ode' },
+  { '<leader>d', group = '[D]ocument' },
+  { '<leader>r', group = '[R]ename' },
+  { '<leader>s', group = '[S]earch' },
+  { '<leader>w', group = '[W]orkspace' },
+  { '<leader>t', group = '[T]oggle' },
+  { '<leader>g', group = '[G]it',      mode = { 'n', 'v' } },
+  { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
 }
--- register which-key VISUAL mode
--- required for visual <leader>hs (hunk stage) to work
-require('which-key').register({
-  ['<leader>'] = { name = 'VISUAL <leader>' },
-  ['<leader>h'] = { 'Git [H]unk' },
-}, { mode = 'v' })
 
 -- mason-lspconfig requires that these setup functions are called in this order
 -- before setting up the servers.
@@ -973,3 +1035,13 @@ cmp.setup {
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
+parser_config.blade = {
+  install_info = {
+    url = "https://github.com/EmranMR/tree-sitter-blade",
+    files = { "src/parser.c" },
+    branch = "main",
+  },
+  filetype = "blade"
+}
