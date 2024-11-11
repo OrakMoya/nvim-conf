@@ -94,6 +94,7 @@ require('lazy').setup({
   'nvim-neotest/nvim-nio',
   'rcarriga/nvim-dap-ui',
   'nvim-telescope/telescope-dap.nvim',
+  'mfussenegger/nvim-dap-python',
 
   'mbbill/undotree',
 
@@ -131,6 +132,7 @@ require('lazy').setup({
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
 
+  --[[
   {
     "adalessa/laravel.nvim",
     dependencies = {
@@ -147,7 +149,7 @@ require('lazy').setup({
     },
     event = { "VeryLazy" },
     config = true,
-  },
+  },--]]
 
 
 
@@ -430,6 +432,7 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 
 local dap = require('dap')
 require('telescope').load_extension('dap')
+require("dap-python").setup("/usr/bin/python")
 
 dap.adapters.php = {
   type = "executable",
@@ -480,24 +483,21 @@ local lldb = {
   runInTerminal = false,
 }
 
-
-
-
-
 local harpoon = require('harpoon');
-harpoon.setup({})
+harpoon.setup({});
 
-vim.keymap.set("n", "<leader>ha", function() harpoon:list():add() end)
-vim.keymap.set("n", "<leader>hl", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
+vim.keymap.set("n", "<leader>ha", function() harpoon:list():add() end);
+vim.keymap.set("n", "<leader>hl", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end);
 
-vim.keymap.set("n", "<C-h>", function() harpoon:list():select(1) end)
-vim.keymap.set("n", "<C-t>", function() harpoon:list():select(2) end)
-vim.keymap.set("n", "<C-n>", function() harpoon:list():select(3) end)
-vim.keymap.set("n", "<C-s>", function() harpoon:list():select(4) end)
+vim.keymap.set("n", "<C-h>", function() harpoon:list():select(1) end);
+vim.keymap.set("n", "<C-t>", function() harpoon:list():select(2) end);
+vim.keymap.set("n", "<C-n>", function() harpoon:list():select(3) end);
+vim.keymap.set("n", "<C-s>", function() harpoon:list():select(4) end);
 
 -- Toggle previous & next buffers stored within Harpoon list
-vim.keymap.set("n", "<C-S-P>", function() harpoon:list():prev() end)
-vim.keymap.set("n", "<C-S-N>", function() harpoon:list():next() end)
+vim.keymap.set("n", "<C-S-P>", function() harpoon:list():prev() end);
+vim.keymap.set("n", "<C-S-N>", function() harpoon:list():next() end);
+vim.keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle);
 
 local conf = require("telescope.config").values
 local function toggle_telescope(harpoon_files)
@@ -761,11 +761,13 @@ vim.keymap.set('n', '<leader>du', function() require('dapui').toggle() end, { de
 
 
 -- Debugging
-vim.keymap.set('n', '<F5>', function() require('dap').continue() end, { desc = 'Start debugging' })
+vim.keymap.set('n', '<F9>', function() require('dap').continue() end, { desc = 'Start debugging' })
 vim.keymap.set('n', '<F10>', function() require('dap').step_over() end, { desc = 'Step over' })
 vim.keymap.set('n', '<F11>', function() require('dap').step_into() end, { desc = 'Step into' })
 vim.keymap.set('n', '<F12>', function() require('dap').step_out() end, { desc = 'Step out' })
 vim.keymap.set('n', '<Leader>b', function() require('dap').toggle_breakpoint() end, { desc = 'Toggle breakpoint' })
+vim.keymap.set('n', '<Leader>dc', function() require('dap').toggle_breakpoint(vim.fn.input("Condition: ")) end,
+  { desc = 'Set conditional breakpoint' })
 vim.keymap.set({ 'n', 'v' }, '<Leader>dh', function()
   require('dap.ui.widgets').hover()
 end, { desc = 'Debug hover widget' })
@@ -911,7 +913,7 @@ require('which-key').add {
 -- mason-lspconfig requires that these setup functions are called in this order
 -- before setting up the servers.
 require('mason').setup()
-require('mason-lspconfig').setup()
+require('mason-lspconfig').setup({})
 
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
